@@ -1,0 +1,108 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { getFirebaseMessaging, getToken } from "../lib/firebase";
+
+const VAPID_KEY = "BF8gqOvC7GeC8FXvNUi2wdZ3hAaOCYoNaQat4c5-qmNLpi6KKtUKwjovuQqgJ2tO6jdTMQEDiTtFUcqOdVXT7fM"; // Firebase console -> Cloud Messaging -> Web push certificates
+
+export default function Home() {
+  const [showSplash, setShowSplash] = useState(true);
+  const [permission, setPermission] = useState<NotificationPermission | "unsupported">("default");
+  const [fcmToken, setFcmToken] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const timer = setTimeout(() => setShowSplash(false), 2000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  const handleEnableNotifications = async () => {
+    try {
+      if (typeof window === "undefined" || !("Notification" in window)) {
+        setPermission("unsupported");
+        return;
+      }
+
+      const result = await Notification.requestPermission();
+      setPermission(result);
+
+      if (result !== "granted") {
+        return;
+      }
+
+      const messaging = getFirebaseMessaging();
+      if (!messaging) {
+        setError("Messaging not available");
+        return;
+      }
+
+      const token = await getToken(messaging, {
+        vapidKey: VAPID_KEY,
+      });
+
+      if (token) {
+        setFcmToken(token);
+        console.log("FCM token:", token);
+        // TODO: yahi token tum apne backend / DB ko POST se bhej sakte ho
+      } else {
+        setError("Token not received");
+      }
+    } catch (e: any) {
+      console.error(e);
+      setError(e?.message || "Error enabling notifications");
+    }
+  };
+
+  if (showSplash) {
+    return (
+      <main className="min-h-screen flex items-center justify-center">
+        <div className="flex flex-col items-center">
+          <div className="h-24 w-24 rounded-full bg-yellow-400 mb-4" />
+          <h1 className="text-2xl font-bold">Taxihub</h1>
+        </div>
+      </main>
+    );
+  }
+
+  return (
+    <main className="min-h-screen flex flex-col items-center justify-center gap-4 p-4">
+      <h1 className="text-3xl font-bold">Hello world</h1>
+
+      {permission === "granted" && (
+        <p className="text-green-400 text-sm">Notifications enabled.</p>
+      )}
+
+      {permission === "denied" && (
+        <p className="text-red-400 text-sm">
+          Notifications blocked in browser settings.
+        </p>
+      )}
+
+      {permission !== "granted" && permission !== "unsupported" && (
+        <button
+          onClick={handleEnableNotifications}
+          className="px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white text-sm"
+        >
+          Enable notifications
+        </button>
+      )}
+
+      {permission === "unsupported" && (
+        <p className="text-yellow-400 text-sm">
+          Notifications not supported in this browser.
+        </p>
+      )}
+
+      {error && <p className="text-red-400 text-xs">{error}</p>}
+
+{/*
+{fcmToken && (
+//   <p className="text-xs break-all max-w-xs">
+//     Token (copy for testing): {fcmToken}
+//   </p>
+// )}
+*/}
+
+    </main>
+  );
+}

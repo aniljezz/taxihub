@@ -1,0 +1,14 @@
+import withSerwistInit from "@serwist/next";
+
+/** @type {import("next").NextConfig} */
+const nextConfig = {
+  reactStrictMode: true,
+};
+
+const withSerwist = withSerwistInit({
+  swSrc: "public/sw.js",
+  swDest: "public/sw.js",
+  disable: process.env.NODE_ENV !== "production",
+});
+
+export default withSerwist(nextConfig);

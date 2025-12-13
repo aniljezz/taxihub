@@ -1,0 +1,66 @@
+// send-fcm.js
+const fs = require("fs");
+const fetch = require("node-fetch");
+const { google } = require("googleapis");
+
+const serviceAccount = JSON.parse(
+  fs.readFileSync("./service-account.json", "utf8")
+);
+
+const SCOPES = ["https://www.googleapis.com/auth/firebase.messaging"];
+
+async function getAccessToken() {
+  const jwtClient = new google.auth.JWT(
+    serviceAccount.client_email,
+    null,
+    serviceAccount.private_key,
+    SCOPES,
+    null
+  );
+
+  const tokens = await jwtClient.authorize();
+  return tokens.access_token;
+}
+
+async function sendPush() {
+  try {
+    const accessToken = await getAccessToken();
+
+    // yahan apna browser se copy kiya hua FCM token paste karo
+    const targetToken = "du3u65HSZqXC0Bo49yRva0:APA91bFFSfnpXTgFVVNr-qYsu87FwZjJZWs4dJQsqfMHMEO7j1YIG3PX8lK0MnLEi1ETzXCzIjBq8jSyTJJZnV19bnNpHcGww6AJT8HUVs7j1sscS5BUls0";
+
+    const projectId = serviceAccount.project_id;
+    const url = `https://fcm.googleapis.com/v1/projects/${projectId}/messages:send`;
+
+    const body = {
+      message: {
+        token: targetToken,
+        notification: {
+          title: "Taxihub update",
+          body: "New message from Taxihub",
+        },
+        webpush: {
+          notification: {
+            icon: "/icons/icon-192.png",
+          },
+        },
+      },
+    };
+
+    const res = await fetch(url, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json; charset=utf-8",
+      },
+      body: JSON.stringify(body),
+    });
+
+    const data = await res.json();
+    console.log("FCM response:", data);
+  } catch (err) {
+    console.error("Error sending push:", err);
+  }
+}
+
+sendPush();

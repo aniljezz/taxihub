@@ -1,0 +1,126 @@
+"use client";
+
+import { useState } from "react";
+import { Menu, ChevronLeft, ChevronRight, Inbox, Phone, Add } from "lucide-react"; // npm i lucide-react
+
+interface SidebarProps {
+  activeTab: string;
+  onTabChange: (tab: string) => void;
+  onAddLead: () => void;
+  onLogout: () => void;
+}
+
+export default function Sidebar({ activeTab, onTabChange, onAddLead, onLogout }: SidebarProps) {
+  const [isCollapsed, setIsCollapsed] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
+
+  const menuItems = [
+    { id: "enquiries", label: "Enquiries", icon: Inbox, count: 0 },
+    { id: "leads", label: "Call Leads", icon: Phone, count: 0 },
+  ];
+
+  return (
+    <>
+      {/* Mobile Menu Button */}
+      <button
+        className="lg:hidden fixed top-4 left-4 z-50 bg-white/90 backdrop-blur p-3 rounded-xl shadow-lg border"
+        onClick={() => setMobileOpen(!mobileOpen)}
+      >
+        <Menu className="w-6 h-6" />
+      </button>
+
+      {/* Sidebar */}
+      <aside className={`
+        fixed lg:static lg:translate-x-0 inset-0 z-40 w-64 lg:w-72 bg-white border-r shadow-lg
+        transform transition-transform duration-300 ease-in-out
+        ${mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+        ${isCollapsed ? 'w-20' : 'w-64 lg:w-72'}
+      `}>
+        {/* Top Header */}
+        <div className="p-6 border-b flex items-center gap-3">
+          <div className={`p-3 rounded-xl transition-all ${isCollapsed ? 'bg-blue-500' : 'bg-gradient-to-r from-blue-500 to-blue-600'}`}>
+            <span className="text-white font-bold text-xl block lg:hidden">TH</span>
+          </div>
+          {!isCollapsed && (
+            <div>
+              <h2 className="font-bold text-xl text-gray-900">Taxihub</h2>
+              <p className="text-xs text-gray-500">Dashboard</p>
+            </div>
+          )}
+          <button
+            className="ml-auto p-1 lg:hidden"
+            onClick={() => setMobileOpen(false)}
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Menu Items */}
+        <nav className="p-4 space-y-2 flex-1">
+          {menuItems.map((item) => (
+            <button
+              key={item.id}
+              onClick={() => {
+                onTabChange(item.id);
+                setMobileOpen(false);
+              }}
+              className={`
+                w-full flex items-center gap-3 p-3 rounded-xl transition-all group
+                ${activeTab === item.id
+                  ? 'bg-blue-50 border-blue-200 border shadow-sm text-blue-700 font-medium'
+                  : 'hover:bg-gray-50 text-gray-700 hover:text-gray-900'
+                }
+              `}
+            >
+              <item.icon className="w-5 h-5 flex-shrink-0" />
+              <span className={`${isCollapsed ? 'hidden lg:block' : 'block'} group-hover:block`}>
+                {item.label}
+              </span>
+              {item.count > 0 && (
+                <span className="ml-auto bg-blue-100 text-blue-800 text-xs px-2 py-1 rounded-full">
+                  {item.count}
+                </span>
+              )}
+            </button>
+          ))}
+        </nav>
+
+        {/* Bottom Actions */}
+        <div className="p-4 border-t space-y-2">
+          <button
+            onClick={onAddLead}
+            className="w-full flex items-center gap-3 p-3 bg-gradient-to-r from-green-500 to-green-600 hover:from-green-600 hover:to-green-700 text-white rounded-xl shadow-lg transition-all"
+          >
+            <Add className="w-5 h-5" />
+            {!isCollapsed && <span>Add Lead</span>}
+          </button>
+          <button
+            onClick={onLogout}
+            className="w-full flex items-center gap-3 p-3 hover:bg-red-50 text-red-600 hover:text-red-700 rounded-xl transition-all"
+          >
+            <span className="w-5 h-5">🚪</span>
+            {!isCollapsed && <span>Logout</span>}
+          </button>
+        </div>
+
+        {/* Collapse Button */}
+        {!isCollapsed && (
+          <button
+            className="absolute top-20 right-2 p-1 bg-gray-100 hover:bg-gray-200 rounded-full lg:hidden"
+            onClick={() => setIsCollapsed(true)}
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </button>
+        )}
+      </aside>
+
+      {/* Mobile Overlay */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-30 lg:hidden"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
+    </>
+  );
+}

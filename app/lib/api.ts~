@@ -1,0 +1,29 @@
+export const fetchEnquiries = async (token: string): Promise<any[]> => {
+  try {
+    console.log("🔍 Fetching enquiries with token:", token.substring(0, 10) + "...");
+    const res = await fetch(`https://jaishriramtourntravels.com/api/enquiries.php?token=${token}`, {
+      cache: "no-store",
+    });
+
+    console.log("📊 Enquiries response status:", res.status);
+
+    if (res.ok) {
+      const data = await res.json();
+      console.log("📋 Raw API response:", data); // Debug - structure देखो
+
+      // Multiple possible structures handle करो
+      if (Array.isArray(data)) return data;
+      if (data.data && Array.isArray(data.data)) return data.data;
+      if (data.enquiries && Array.isArray(data.enquiries)) return data.enquiries;
+      if (data.results && Array.isArray(data.results)) return data.results;
+      if (data.items && Array.isArray(data.items)) return data.items;
+
+      console.log("⚠️ No array found, returning empty");
+      return [];
+    }
+    return [];
+  } catch (error) {
+    console.error("❌ Enquiries API error:", error);
+    return [];
+  }
+};

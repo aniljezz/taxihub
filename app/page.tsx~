@@ -1,106 +1,402 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { getFirebaseMessaging, getToken } from "../lib/firebase";
 
-const VAPID_KEY = "BF8gqOvC7GeC8FXvNUi2wdZ3hAaOCYoNaQat4c5-qmNLpi6KKtUKwjovuQqgJ2tO6jdTMQEDiTtFUcqOdVXT7fM"; // Firebase console -> Cloud Messaging -> Web push certificates
+interface Enquiry {
+  id: number;
+  name: string;
+  email: string;
+  phone: string;
+  message: string;
+  created_at?: string;
+  [key: string]: any;
+}
+
+interface Lead {
+  id: number;
+  name: string;
+  phone: string;
+  status?: string;
+  notes?: string;
+  created_at?: string;
+  [key: string]: any;
+}
+
+interface User {
+  email: string;
+  token: string;
+}
 
 export default function Home() {
   const [showSplash, setShowSplash] = useState(true);
-  const [permission, setPermission] = useState<NotificationPermission | "unsupported">("default");
-  const [fcmToken, setFcmToken] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [loginEmail, setLoginEmail] = useState("");
+  const [loginPassword, setLoginPassword] = useState("");
+  const [accessToken, setAccessToken] = useState("");
+  const [loginError, setLoginError] = useState("");
+
+  // Data states
+  const [enquiries, setEnquiries] = useState<Enquiry[]>([]);
+  const [leads, setLeads] = useState<Lead[]>([]);
+  const [enquiriesLoading, setEnquiriesLoading] = useState(false);
+  const [leadsLoading, setLeadsLoading] = useState(false);
+  const [activeTab, setActiveTab] = useState<"enquiries" | "leads">("enquiries");
+
+  // Mobile sidebar
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(() => setShowSplash(false), 2000);
     return () => clearTimeout(timer);
   }, []);
 
-  const handleEnableNotifications = async () => {
-    try {
-      if (typeof window === "undefined" || !("Notification" in window)) {
-        setPermission("unsupported");
-        return;
-      }
-
-      const result = await Notification.requestPermission();
-      setPermission(result);
-
-      if (result !== "granted") {
-        return;
-      }
-
-      const messaging = getFirebaseMessaging();
-      if (!messaging) {
-        setError("Messaging not available");
-        return;
-      }
-
-      const token = await getToken(messaging, {
-        vapidKey: VAPID_KEY,
-      });
-
-      if (token) {
-        setFcmToken(token);
-        console.log("FCM token:", token);
-        // TODO: yahi token tum apne backend / DB ko POST se bhej sakte ho
-      } else {
-        setError("Token not received");
-      }
-    } catch (e: any) {
-      console.error(e);
-      setError(e?.message || "Error enabling notifications");
+  // Check saved login
+  useEffect(() => {
+    const savedUser = localStorage.getItem("taxihub_user");
+    if (savedUser) {
+      const user: User = JSON.parse(savedUser);
+      setLoginEmail(user.email);
+      setAccessToken(user.token);
+      setIsLoggedIn(true);
+      fetchData(user.token);
     }
+  }, []);
+
+  const fetchData = async (token: string) => {
+    // Fetch enquiries
+    try {
+      setEnquiriesLoading(true);
+      const res = await fetch(`https://jaishriramtourntravels.com/api/enquiries.php?token=${token}`, {
+        cache: "no-store",
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const enquiriesList = Array.isArray(data) ? data : data.data || data.enquiries || [];
+        setEnquiries(enquiriesList);
+      }
+    } catch (e) {
+      console.error("Enquiries error:", e);
+    } finally {
+      setEnquiriesLoading(false);
+    }
+
+    // Fetch leads (safe if endpoint missing)
+    try {
+      setLeadsLoading(true);
+      const res = await fetch(`https://jaishriramtourntravels.com/api/leads.php?token=${token}`, {
+        cache: "no-store",
+      });
+      if (res.ok) {
+        const data = await res.json();
+        const leadsList = Array.isArray(data) ? data : data.data || data.leads || [];
+        setLeads(leadsList);
+      } else {
+        setLeads([]);
+      }
+    } catch (e) {
+      console.log("Leads endpoint not available:", e);
+      setLeads([]);
+    } finally {
+      setLeadsLoading(false);
+    }
+  };
+
+  const handleLogin = (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoginError("");
+
+    if (!loginEmail || !loginPassword || !accessToken) {
+      setLoginError("Please fill all fields");
+      return;
+    }
+
+    const user: User = { email: loginEmail, token: accessToken };
+    localStorage.setItem("taxihub_user", JSON.stringify(user));
+    setIsLoggedIn(true);
+    fetchData(accessToken);
+  };
+
+  const handleLogout = () => {
+    localStorage.removeItem("taxihub_user");
+    setIsLoggedIn(false);
+    setLoginEmail("");
+    setLoginPassword("");
+    setAccessToken("");
+    setEnquiries([]);
+    setLeads([]);
   };
 
   if (showSplash) {
     return (
-      <main className="min-h-screen flex items-center justify-center">
+      <main className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-500 to-blue-600">
         <div className="flex flex-col items-center">
-          <div className="h-24 w-24 rounded-full bg-yellow-400 mb-4" />
-          <h1 className="text-2xl font-bold">Taxihub</h1>
+          <div className="h-24 w-24 rounded-full bg-yellow-400 mb-4 animate-pulse" />
+          <h1 className="text-3xl font-bold text-white drop-shadow-lg">Taxihub</h1>
+        </div>
+      </main>
+    );
+  }
+
+  if (!isLoggedIn) {
+    return (
+      <main className="min-h-screen flex items-center justify-center p-4 bg-gray-50">
+        <div className="w-full max-w-md bg-white rounded-xl shadow-xl p-8 border">
+          <div className="text-center mb-8">
+            <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-600 to-blue-700 bg-clip-text text-transparent mb-2">
+              Taxihub Dashboard
+            </h1>
+            <p className="text-gray-600">Admin Login Required</p>
+          </div>
+          <form onSubmit={handleLogin} className="space-y-6">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Email</label>
+              <input
+                type="email"
+                value={loginEmail}
+                onChange={(e) => setLoginEmail(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="admin@taxihub.com"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Password</label>
+              <input
+                type="password"
+                value={loginPassword}
+                onChange={(e) => setLoginPassword(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="••••••••"
+                required
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Access Token</label>
+              <input
+                type="text"
+                value={accessToken}
+                onChange={(e) => setAccessToken(e.target.value)}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                placeholder="your-api-access-token"
+                required
+              />
+            </div>
+            {loginError && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-3">
+                <p className="text-red-800 text-sm">{loginError}</p>
+              </div>
+            )}
+            <button
+              type="submit"
+              className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-700 hover:to-blue-800 text-white font-bold py-3 px-4 rounded-lg transition-all duration-200 shadow-lg hover:shadow-xl"
+            >
+              Login to Dashboard
+            </button>
+          </form>
+          <div className="mt-6 text-center">
+            <p className="text-xs text-gray-500">Demo: admin@taxihub.com / admin123 / your-token</p>
+          </div>
         </div>
       </main>
     );
   }
 
   return (
-    <main className="min-h-screen flex flex-col items-center justify-center gap-4 p-4">
-      <h1 className="text-3xl font-bold">Hello world</h1>
+    <div className="min-h-screen bg-gray-50 flex">
+      {/* Mobile Menu Button */}
+      <button
+        className="lg:hidden fixed top-4 left-4 z-50 bg-white/90 backdrop-blur p-3 rounded-xl shadow-lg border"
+        onClick={() => setMobileOpen(true)}
+      >
+        ☰
+      </button>
 
-      {permission === "granted" && (
-        <p className="text-green-400 text-sm">Notifications enabled.</p>
+      {/* Sidebar */}
+      <aside className={`
+        fixed lg:static inset-0 z-40 w-64 lg:w-72 bg-white border-r shadow-lg
+        transform transition-transform duration-300 ease-in-out
+        ${mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+      `}>
+        <div className="p-6 border-b flex items-center gap-3">
+          <div className="w-12 h-12 bg-gradient-to-r from-blue-500 to-blue-600 rounded-xl flex items-center justify-center">
+            <span className="text-white font-bold text-lg">TH</span>
+          </div>
+          <div>
+            <h2 className="font-bold text-xl text-gray-900">Taxihub</h2>
+            <p className="text-sm text-gray-500">Dashboard</p>
+          </div>
+        </div>
+
+        <nav className="p-6 space-y-2 flex-1">
+          <button
+            onClick={() => {
+              setActiveTab("enquiries");
+              setMobileOpen(false);
+            }}
+            className={`w-full flex items-center gap-3 p-4 rounded-xl transition-all group ${
+              activeTab === "enquiries"
+                ? 'bg-blue-50 border-blue-200 border shadow-sm text-blue-700 font-semibold'
+                : 'hover:bg-gray-50 text-gray-700 hover:text-gray-900'
+            }`}
+          >
+            📨
+            <span>Enquiries ({enquiries.length})</span>
+          </button>
+          <button
+            onClick={() => {
+              setActiveTab("leads");
+              setMobileOpen(false);
+            }}
+            className={`w-full flex items-center gap-3 p-4 rounded-xl transition-all group ${
+              activeTab === "leads"
+                ? 'bg-green-50 border-green-200 border shadow-sm text-green-700 font-semibold'
+                : 'hover:bg-gray-50 text-gray-700 hover:text-gray-900'
+            }`}
+          >
+            📞
+            <span>Call Leads ({leads.length})</span>
+          </button>
+        </nav>
+
+        <div className="p-6 border-t">
+          <button
+            onClick={() => {
+              handleLogout();
+              setMobileOpen(false);
+            }}
+            className="w-full flex items-center gap-3 p-4 text-red-600 hover:bg-red-50 rounded-xl transition-all font-medium"
+          >
+            🚪 Logout
+          </button>
+        </div>
+      </aside>
+
+      {/* Mobile Overlay */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 bg-black/50 z-30 lg:hidden"
+          onClick={() => setMobileOpen(false)}
+        />
       )}
 
-      {permission === "denied" && (
-        <p className="text-red-400 text-sm">
-          Notifications blocked in browser settings.
-        </p>
-      )}
+      {/* Main Content */}
+      <main className="flex-1 lg:ml-72 pt-16 lg:pt-0 px-6 lg:px-12 pb-12">
+        <div className="max-w-6xl mx-auto">
+          {activeTab === "enquiries" && (
+            <div className="bg-white rounded-2xl shadow-sm border p-8">
+              <div className="flex items-center gap-4 mb-8">
+                <div className="w-14 h-14 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center">
+                  <span className="text-white text-xl font-bold">📨</span>
+                </div>
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-900">Customer Enquiries</h1>
+                  <p className="text-gray-500 mt-1">{enquiries.length} total</p>
+                </div>
+              </div>
 
-      {permission !== "granted" && permission !== "unsupported" && (
-        <button
-          onClick={handleEnableNotifications}
-          className="px-4 py-2 rounded bg-blue-600 hover:bg-blue-700 text-white text-sm"
-        >
-          Enable notifications
-        </button>
-      )}
+              {enquiriesLoading ? (
+                <div className="flex items-center justify-center py-20">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+                </div>
+              ) : enquiries.length === 0 ? (
+                <div className="text-center py-20">
+                  <div className="text-6xl mb-6">📭</div>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-2">No enquiries yet</h3>
+                  <p className="text-gray-500 max-w-md mx-auto">New customer enquiries will appear here automatically</p>
+                </div>
+              ) : (
+                <div className="grid gap-6">
+                  {enquiries.map((enquiry, index) => (
+                    <div
+                      key={enquiry.id || index}
+                      className="group p-6 border border-gray-200 hover:border-blue-300 rounded-2xl hover:shadow-xl transition-all bg-gradient-to-r from-white to-gray-50 hover:from-blue-50"
+                    >
+                      <div className="flex items-start justify-between mb-4">
+                        <h3 className="font-bold text-xl text-gray-900 group-hover:text-blue-700">
+                          {enquiry.name || "N/A"}
+                        </h3>
+                        <span className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-semibold ml-4">
+                          #{enquiry.id || index + 1}
+                        </span>
+                      </div>
+                      <div className="grid md:grid-cols-2 gap-6">
+                        <div>
+                          <p className="text-sm font-medium text-gray-700 mb-2">📧 Email</p>
+                          <p className="text-gray-600">{enquiry.email || "N/A"}</p>
+                        </div>
+                        <div>
+                          <p className="text-sm font-medium text-gray-700 mb-2">📞 Phone</p>
+                          <a href={`tel:${enquiry.phone}`} className="text-blue-600 hover:underline font-semibold">
+                            {enquiry.phone || "N/A"}
+                          </a>
+                        </div>
+                      </div>
+                      {enquiry.message && (
+                        <div className="mt-6 p-4 bg-blue-50 border border-blue-100 rounded-xl">
+                          <p className="text-sm text-gray-800 leading-relaxed">{enquiry.message}</p>
+                        </div>
+                      )}
+                      {enquiry.created_at && (
+                        <p className="text-xs text-gray-500 mt-4">
+                          📅 {new Date(enquiry.created_at).toLocaleString("en-IN")}
+                        </p>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
-      {permission === "unsupported" && (
-        <p className="text-yellow-400 text-sm">
-          Notifications not supported in this browser.
-        </p>
-      )}
-
-      {error && <p className="text-red-400 text-xs">{error}</p>}
-
-// {fcmToken && (
-//   <p className="text-xs break-all max-w-xs">
-//     Token (copy for testing): {fcmToken}
-//   </p>
-// )}
-
-    </main>
+          {activeTab === "leads" && (
+            <div className="bg-white rounded-2xl shadow-sm border p-8">
+              <div className="flex items-center gap-4 mb-8">
+                <div className="w-14 h-14 bg-gradient-to-br from-green-500 to-green-600 rounded-2xl flex items-center justify-center">
+                  <span className="text-white text-xl font-bold">📞</span>
+                </div>
+                <div>
+                  <h1 className="text-3xl font-bold text-gray-900">Call Leads</h1>
+                  <p className="text-gray-500 mt-1">{leads.length} total</p>
+                </div>
+              </div>
+              {leadsLoading ? (
+                <div className="flex items-center justify-center py-20">
+                  <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+                </div>
+              ) : leads.length === 0 ? (
+                <div className="text-center py-20">
+                  <div className="text-6xl mb-6">📱</div>
+                  <h3 className="text-2xl font-bold text-gray-900 mb-2">No leads yet</h3>
+                  <p className="text-gray-500 max-w-md mx-auto">Add your first call lead or wait for API data</p>
+                </div>
+              ) : (
+                <div className="grid gap-4">
+                  {leads.map((lead, index) => (
+                    <div key={lead.id || index} className="p-6 border border-gray-200 rounded-xl hover:shadow-md bg-gradient-to-r from-gray-50 to-white">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <h4 className="font-bold text-lg">{lead.name}</h4>
+                          <a href={`tel:${lead.phone}`} className="text-green-600 hover:underline font-semibold block mt-1">
+                            📞 {lead.phone}
+                          </a>
+                          {lead.notes && <p className="text-sm text-gray-600 mt-2">{lead.notes}</p>}
+                        </div>
+                        <span className={`px-3 py-1 rounded-full text-xs font-semibold ${
+                          lead.status === 'contacted'
+                            ? 'bg-green-100 text-green-800'
+                            : 'bg-yellow-100 text-yellow-800'
+                        }`}>
+                          {lead.status || 'Pending'}
+                        </span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </main>
+    </div>
   );
 }

@@ -16,7 +16,7 @@ export default function RootLayout({
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#111827" />
       </head>
-      <body className="bg-gray-900 text-white">{children}</body>
+      <body className="bg-layout-bg">{children}</body>
     </html>
   );
 }

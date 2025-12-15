@@ -1,6 +1,7 @@
 export interface Enquiry {
   id: number;
   name: string;
+  email: string;
   phone: string;
   message: string;
   created_at?: string;
@@ -8,11 +9,13 @@ export interface Enquiry {
 }
 
 export interface Lead {
-  id: number;
+  id?: number;
   name: string;
   phone: string;
-  status?: string;
-  notes?: string;
+  pickup_location: string;
+  drop_location: string;
+  trip_date: string;
+  status: "confirmed" | "pending" | "lost";
   created_at?: string;
   [key: string]: any;
 }

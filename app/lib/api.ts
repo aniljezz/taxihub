@@ -1,29 +1,39 @@
-export const fetchEnquiries = async (token: string): Promise<any[]> => {
-  try {
-    const res = await fetch(`https://jaishriramtourntravels.com/api/enquiries.php?token=${token}`, {
-      cache: "no-store",
-    });
-    if (res.ok) {
-      const data = await res.json();
-      return Array.isArray(data) ? data : data.data || data.enquiries || [];
-    }
-    return [];
-  } catch {
-    return [];
-  }
-};
+import { Enquiry, Lead } from "../types";
 
-export const fetchLeads = async (token: string): Promise<any[]> => {
+const BASE = "https://jaishriramtourntravels.com/api";
+
+export async function getEnquiries(token: string): Promise<Enquiry[]> {
+  const res = await fetch(`${BASE}/enquiries.php?token=${token}`, {
+    cache: "no-store",
+  });
+  if (!res.ok) return [];
+  const data = await res.json();
+  return Array.isArray(data) ? data : data.data || data.enquiries || [];
+}
+
+export async function getLeads(token: string): Promise<Lead[]> {
+  const res = await fetch(`${BASE}/leads.php?token=${token}`, {
+    cache: "no-store",
+  });
+  if (!res.ok) return [];
+  const data = await res.json();
+  return Array.isArray(data) ? data : data.data || data.leads || [];
+}
+
+export async function createLead(
+  token: string,
+  lead: Partial<Lead>
+): Promise<Lead | null> {
+  const res = await fetch(`${BASE}/leads.php?token=${token}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(lead),
+  });
+  if (!res.ok) return null;
   try {
-    const res = await fetch(`https://jaishriramtourntravels.com/api/leads.php?token=${token}`, {
-      cache: "no-store",
-    });
-    if (res.ok) {
-      const data = await res.json();
-      return Array.isArray(data) ? data : data.data || data.leads || [];
-    }
-    return [];
+    const data = await res.json();
+    return (data.lead || data.data || data) as Lead;
   } catch {
-    return [];
+    return null;
   }
-};
+}

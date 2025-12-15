@@ -9,11 +9,25 @@
   --foreground: #171717;
 }
 
+/* YAHAN apna design system define karo */
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
+
+  /* Skydash colors */
+  --color-primary-700: #4B49AC;
+  --color-primary-500: #7DA0FA;
+  --color-primary-400: #98BDFF;
+  --color-primary-600: #7978E9;
+  --color-accent-pink: #F3797E;
+  --color-layout-bg: #F5F7FF;
+  --color-layout-sidebar: #262B40;
+
+  /* Custom utilities */
+  --shadow-card: 0 10px 30px rgba(76, 87, 125, 0.15);
+  --radius-xl2: 1.25rem;
 }
 
 @media (prefers-color-scheme: dark) {

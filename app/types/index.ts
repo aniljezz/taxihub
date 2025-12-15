@@ -1,18 +1,21 @@
 export interface Enquiry {
   id: number;
   name: string;
+  email: string;
   phone: string;
-  service: string;
   message: string;
   created_at?: string;
   [key: string]: any;
 }
 
 export interface Lead {
-  id: number;
+  id?: number;
   name: string;
   phone: string;
-  status?: string;
+  pickup_location?: string;
+  drop_location?: string;
+  trip_date?: string;
+  status?: "confirmed" | "pending" | "lost";
   notes?: string;
   created_at?: string;
   [key: string]: any;

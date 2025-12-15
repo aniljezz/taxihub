@@ -1,1 +1,34 @@
-
+/** @type {import('tailwindcss').Config} */
+module.exports = {
+  content: [
+    "./app/**/*.{js,ts,jsx,tsx}",
+    "./pages/**/*.{js,ts,jsx,tsx}",
+    "./components/**/*.{js,ts,jsx,tsx}",
+  ],
+  theme: {
+    extend: {
+      colors: {
+        primary: {
+          700: "#4B49AC",
+          500: "#7DA0FA",
+          400: "#98BDFF",
+          600: "#7978E9",
+        },
+        accent: {
+          pink: "#F3797E",
+        },
+        layout: {
+          bg: "#F5F7FF",
+          sidebar: "#262B40",
+        },
+      },
+      boxShadow: {
+        card: "0 10px 30px rgba(76, 87, 125, 0.15)",
+      },
+      borderRadius: {
+        xl2: "1.25rem",
+      },
+    },
+  },
+  plugins: [],
+};

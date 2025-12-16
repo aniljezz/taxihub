@@ -3,6 +3,7 @@ import "./globals.css";
 export const metadata = {
   title: "Taxihub",
   description: "Taxihub SaaS tool",
+  manifest: '/manifest.json',
 };
 
 export default function RootLayout({

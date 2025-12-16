@@ -5,6 +5,12 @@ export const metadata = {
   description: "Taxihub SaaS tool",
 };
 
+export const metadata = {
+  manifest: '/manifest.json',
+  // other metadata
+};
+
+
 export default function RootLayout({
   children,
 }: {
@@ -16,7 +22,7 @@ export default function RootLayout({
         <link rel="manifest" href="/manifest.json" />
         <meta name="theme-color" content="#111827" />
       </head>
-      <body className="bg-gray-900 text-white">{children}</body>
+      <body className="bg-layout-bg">{children}</body>
     </html>
   );
 }

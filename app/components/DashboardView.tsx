@@ -207,7 +207,7 @@ export default function DashboardView({ user, onLogout }: DashboardViewProps) {
 <main className="flex-1 px-4 md:px-8 py-6 space-y-6">
   {activeTab === "dashboard" && (
     <section className="bg-white rounded-xl2 shadow-card border border-gray-100 p-6">
-      <p className="text-lg font-semibold">
+      <p className="text-lg font-semibold text-primary">
         Welcome {user.email.split("@")[0]}
       </p>
       <p className="text-sm text-gray-500 mt-2">
@@ -265,20 +265,20 @@ export default function DashboardView({ user, onLogout }: DashboardViewProps) {
     <section className="bg-white rounded-xl2 shadow-card border border-gray-100 p-6">
       <div className="flex items-center justify-between mb  -4">
         <h2 className="text-lg font-semibold text-gray-800">
-          All call leads ({leads.length})
+          All Call Leads ({leads.length})
         </h2>
         <button
           onClick={() => setShowAddLead(true)}
           className="px-3 py-2 text-xs rounded-lg bg-primary-700 text-white font-semibold hover:bg-primary-600"
         >
-          ➕ Add Call Lead
+          ➕ Add New Call
         </button>
       </div>
       {loadingLeads ? (
         <p className="text-xs text-gray-500 py-6">Loading…</p>
       ) : leads.length === 0 ? (
         <p className="text-xs text-gray-500 py-6">
-          No leads available.
+          No leads available, please add your call details.
         </p>
       ) : (
         <div className="space-y-4 max-h-[70vh] overflow-y-auto">

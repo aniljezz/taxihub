@@ -31,7 +31,7 @@ export default function AddLeadModal({
       <div className="w-full max-w-lg bg-white rounded-xl2 shadow-card border border-gray-100 p-6">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-lg font-semibold text-gray-800">
-            Add Call Lead
+            Add New Call
           </h2>
           <button
             className="text-gray-400 hover:text-gray-600"
@@ -146,7 +146,7 @@ export default function AddLeadModal({
               disabled={loading}
               className="px-5 py-2 text-xs rounded-lg bg-primary-700 text-white font-semibold hover:bg-primary-600 disabled:opacity-70"
             >
-              {loading ? "Saving..." : "Save lead"}
+              {loading ? "Saving..." : "Save"}
             </button>
           </div>
         </form>
